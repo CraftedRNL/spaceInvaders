@@ -1,6 +1,5 @@
 html{
     height: 100%;
-    /* overflow: auto; */
    background-color: rgb(127, 204, 255);
 }
 
@@ -10,7 +9,6 @@ body {
     font-family: 'Century Gothic', sans-serif;
 }
 .container-fluid{
-    /* display: flex; */
     background-image: url("../img/city.png");
     background-size: cover;
     width: 100%;
@@ -19,7 +17,6 @@ body {
     
 }
 .row{
-    /* width: 100%; */
     height: auto;
 }
 .col{
@@ -27,3 +24,9 @@ body {
 }
 
 /* base stuff */
+canvas{
+    display: flex;
+    background-color: aliceblue;
+    border: 5px solid silver;
+    margin: auto;
+}
