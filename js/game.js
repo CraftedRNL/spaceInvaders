@@ -1,5 +1,5 @@
 var myCharacter;
-var myObstacles = [];
+var myEnemies = [];
 var bullets = [];
 var inertia = .15;
 var speed = .25;
@@ -7,7 +7,6 @@ var bulletSpeed = 5;
 var bulletTrue = true;
 function startGame() {
     myGameArea.start();
-    // myObstacle = new component(10, 200, "green", 300, 120);
 }
 var myGameArea = {
     canvas: document.createElement("canvas"),
@@ -18,26 +17,26 @@ var myGameArea = {
         this.canvas.classList.add("mx-auto")
         this.context = this.canvas.getContext("2d");
         myCharacter = new component(40, 40, "red", this.canvas.width, this.canvas.height);
+        myEnemies.push(new enemy(50, 50, "blue", this.canvas.width,this.canvas.height, 3, 1));
         document.getElementById("box").appendChild(this.canvas);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
         window.addEventListener('keydown', function (e) {
+            if (e.code === 'Space' && bulletTrue) {
+                bullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y));
+                bulletTrue = false;
+                var time = this.setTimeout(() => {
+                    bulletTrue = true;
 
+                }, 300)
+            }
             myGameArea.keys = (myGameArea.keys || []);
             myGameArea.keys[e.keyCode] = true;
         })
         window.addEventListener('keyup', function (e) {
             myGameArea.keys[e.keyCode] = false;
 
-            if (e.code === 'Space' && bulletTrue ) {
-                
-                bullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y));
-                bulletTrue = false;
-                var time = this.setTimeout(()=>{
-                    bulletTrue = true;
-                    
-                },300)
-            }
+
         })
 
 
@@ -48,7 +47,7 @@ var myGameArea = {
     stop: function () {
         clearInterval(this.interval);
     }
-   
+
 
 }
 function bullet(width, height, color, x, y) {
@@ -62,6 +61,26 @@ function bullet(width, height, color, x, y) {
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
 }
+function enemy(width, height, color, x, y, health, damage){
+    this.width = width;
+    this.height = height;
+    this.x = (x / 2 - width / 1.5);
+    this.y = y / 2  ;
+    this.health = health;
+    this.damage = damage;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.update = function () {
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.hit = function(){
+        var mybottom = this.y + (this.height);
+        
+    }
+}
+
 function component(width, height, color, x, y) {
     this.width = width;
     this.height = height;
@@ -82,7 +101,6 @@ function component(width, height, color, x, y) {
         this.speedX = Math.min(5, Math.max(-5, this.speedX));
         this.speedY = Math.min(5, Math.max(-5, this.speedY));
 
-
         if (Math.abs(this.speedX) < 0.15) {
             this.speedX = 0;
         }
@@ -90,30 +108,38 @@ function component(width, height, color, x, y) {
             this.speedY = 0;
         }
     }
-    this.crashWith = function (otherobj) {
-        var myleft = this.x + 5;
-        var myright = this.x + (this.width) - 5;
-        var mytop = this.y + 5;
-        var mybottom = this.y + (this.height) - 5;
-        var otherleft = otherobj.x;
-        var otherright = otherobj.x + (otherobj.width);
-        var othertop = otherobj.y;
-        var otherbottom = otherobj.y + (otherobj.height);
-        var crash = true;
-        if ((mybottom < othertop) ||
-            (mytop > otherbottom) ||
-            (myright < otherleft) ||
-            (myleft > otherright)) {
-            crash = false;
+    this.wallCrash = function () {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+
+        var wallleft = 0;
+        var wallright = myGameArea.canvas.width;
+        var walltop = 0;
+        var wallbottom = myGameArea.canvas.height;
+
+        var crash = false;
+
+        if ((walltop >= mytop)) {
+            topWall();
         }
-        return crash;
+        if ((wallbottom <= mybottom)) {
+            bottomWall();
+        }
+        if (wallleft >= myleft) {
+            leftWall();
+        }
+        if (wallright <= myright) {
+            rightWall();
+        }
     }
 
 }
 
 function updateGameArea() {
 
-
+    myCharacter.wallCrash()
 
 
 
@@ -145,7 +171,9 @@ function updateGameArea() {
         bullets[i].update();
         if (bullets[i].y < 0) bullets.splice(i, 1);
     }
-
+    for (i = 0; i < myEnemies.length; i += 1) {
+        myEnemies[i].update();
+    }
     myCharacter.newPos();
     myCharacter.update();
 
@@ -154,4 +182,16 @@ function updateGameArea() {
 function everyinterval(n) {
     if ((myGameArea.frameNo / n) % 1 == 0) { return true; }
     return false;
+}
+function leftWall() {
+    myCharacter.x = 0;
+}
+function rightWall() {
+    myCharacter.x = myGameArea.canvas.width - myCharacter.width;
+}
+function topWall() {
+    myCharacter.y = 0;
+}
+function bottomWall() {
+    myCharacter.y = (myGameArea.canvas.height - myCharacter.height);
 }
