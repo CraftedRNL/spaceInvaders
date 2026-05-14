@@ -13,32 +13,27 @@ function startGame() {
 var myGameArea = {
     canvas: document.createElement("canvas"),
     start: function () {
-        this.canvas.width = 1080;
-        this.canvas.height = 720;
+
+        this.canvas.width = document.getElementById("box").clientWidth;
+        this.canvas.height = document.getElementById("box").clientHeight;
+        // console.log(document.getElementById("box").clientWidth + " " + document.getElementById("box").clientHeight)
         this.canvas.style.borderColor = "black"
         this.canvas.classList.add("mx-auto")
         this.context = this.canvas.getContext("2d");
-        
+
         myCharacter = new component(40, 40, "red", this.canvas.width, this.canvas.height);
-        myEnemies.push(new enemy(50, 50, "blue", this.canvas.width,this.canvas.height, 3, 1));
+        myEnemies.push(new enemy(50, 50, "blue", this.canvas.width, this.canvas.height, 3, 1));
         document.getElementById("box").appendChild(this.canvas);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
         window.addEventListener('keydown', function (e) {
-            if (e.code === 'Space' && bulletTrue) {
-                bullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y));
-                bulletTrue = false;
-                var time = this.setTimeout(() => {
-                    bulletTrue = true;
 
-                }, 300)
-            }
             myGameArea.keys = (myGameArea.keys || []);
             myGameArea.keys[e.keyCode] = true;
         })
         window.addEventListener('keyup', function (e) {
             myGameArea.keys[e.keyCode] = false;
-            
+
 
         })
 
@@ -63,28 +58,40 @@ function bullet(width, height, color, x, y) {
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
-    this.hit = function(index, enemyArray){
-        var bulletTop = bullets[index].y + (this.height);
-        
-    }
+    this.hit = function (enemyArray) {
+        const bulletTop = this.y;
+        const bulletBottom = this.y + this.height;
+        const bulletLeft = this.x;
+        const bulletRight = this.x + this.width;
+
+        enemyArray.forEach((enemy, index) => {
+            if (bulletRight > enemy.x &&
+                bulletLeft < enemy.x + enemy.width &&
+                bulletBottom > enemy.y &&
+                bulletTop < enemy.y + enemy.height) {
+                enemyArray.splice(index, 1);
+                return true;
+            }
+        });
+    };
 }
-function enemy(width, height, color, x, y, health, damage){
+function enemy(width, height, color, x, y, health, damage) {
     this.width = width;
     this.height = height;
     this.x = (x / 2 - width / 1.5);
-    this.y = y / 2  ;
+    this.y = y / 2;
     this.health = health;
     this.damage = damage;
     this.speedX = 0;
     this.speedY = 0;
     this.update = function () {
         ctx = myGameArea.context;
-        
+
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        
+
     }
-    
+
 }
 
 function component(width, height, color, x, y) {
@@ -97,10 +104,10 @@ function component(width, height, color, x, y) {
 
     this.update = function () {
         ctx = myGameArea.context;
-        
+
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.drawImage(image, this.x, this.y, this.width, this.height)
+        // ctx.drawImage(image, this.x, this.y, this.width, this.height)
     }
     this.newPos = function () {
         this.x += this.speedX;
@@ -117,15 +124,15 @@ function component(width, height, color, x, y) {
         }
     }
     this.wallCrash = function () {
-        var myleft = this.x;
-        var myright = this.x + (this.width);
-        var mytop = this.y;
-        var mybottom = this.y + (this.height);
+        const myleft = this.x;
+        const myright = this.x + (this.width);
+        const mytop = this.y;
+        const mybottom = this.y + (this.height);
 
-        var wallleft = 0;
-        var wallright = myGameArea.canvas.width;
-        var walltop = 0;
-        var wallbottom = myGameArea.canvas.height;
+        const wallleft = 0;
+        const wallright = myGameArea.canvas.width;
+        const walltop = 0;
+        const wallbottom = myGameArea.canvas.height;
 
         var crash = false;
 
@@ -147,38 +154,48 @@ function component(width, height, color, x, y) {
 
 function updateGameArea() {
 
+    myGameArea.clear();
+    const keys = myGameArea.keys;
     myCharacter.wallCrash()
 
-    
 
-    myGameArea.clear();
+    if (!keys) {
+        return;
+    }
 
-    if (myGameArea.keys && myGameArea.keys[37]) {
+    if (keys[37]) {
         myCharacter.speedX += -speed;
     } else if (myCharacter.speedX < 0) {
         myCharacter.speedX += inertia;
     }
-    if (myGameArea.keys && myGameArea.keys[39]) {
+    if (keys[39]) {
         myCharacter.speedX += speed;
     } else if (myCharacter.speedX > 0) {
         myCharacter.speedX -= inertia;
     }
-    if (myGameArea.keys && myGameArea.keys[38]) {
+    if (keys[38]) {
         myCharacter.speedY += -speed;
     } else if (myCharacter.speedY < 0) {
         myCharacter.speedY += inertia;
     }
-    if (myGameArea.keys && myGameArea.keys[40]) {
+    if (keys[40]) {
         myCharacter.speedY += speed;
     } else if (myCharacter.speedY > 0) {
         myCharacter.speedY -= inertia;
-        
     }
+    if (keys[32] && bulletTrue) {
+        bullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y));
+        bulletTrue = false;
+        setTimeout(() => {
+            bulletTrue = true;
+        }, 300)
+    }
+
 
     for (i = 0; i < bullets.length; i += 1) {
         bullets[i].y += -bulletSpeed;
         bullets[i].update();
-        bullet.hit(i, myEnemies);
+        bullets[i].hit(myEnemies)
         if (bullets[i].y < 0) bullets.splice(i, 1);
     }
     for (i = 0; i < myEnemies.length; i += 1) {
@@ -189,6 +206,8 @@ function updateGameArea() {
 
 
 }
+
+
 function everyinterval(n) {
     if ((myGameArea.frameNo / n) % 1 == 0) { return true; }
     return false;
