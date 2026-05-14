@@ -1,10 +1,12 @@
 var myCharacter;
+var myImage;
 var myEnemies = [];
 var bullets = [];
 var inertia = .15;
 var speed = .25;
 var bulletSpeed = 5;
 var bulletTrue = true;
+var image = document.getElementById("ship");
 function startGame() {
     myGameArea.start();
 }
@@ -16,6 +18,7 @@ var myGameArea = {
         this.canvas.style.borderColor = "black"
         this.canvas.classList.add("mx-auto")
         this.context = this.canvas.getContext("2d");
+        
         myCharacter = new component(40, 40, "red", this.canvas.width, this.canvas.height);
         myEnemies.push(new enemy(50, 50, "blue", this.canvas.width,this.canvas.height, 3, 1));
         document.getElementById("box").appendChild(this.canvas);
@@ -35,7 +38,7 @@ var myGameArea = {
         })
         window.addEventListener('keyup', function (e) {
             myGameArea.keys[e.keyCode] = false;
-
+            
 
         })
 
@@ -60,6 +63,10 @@ function bullet(width, height, color, x, y) {
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     }
+    this.hit = function(index, enemyArray){
+        var bulletTop = bullets[index].y + (this.height);
+        
+    }
 }
 function enemy(width, height, color, x, y, health, damage){
     this.width = width;
@@ -72,13 +79,12 @@ function enemy(width, height, color, x, y, health, damage){
     this.speedY = 0;
     this.update = function () {
         ctx = myGameArea.context;
+        
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-    this.hit = function(){
-        var mybottom = this.y + (this.height);
         
     }
+    
 }
 
 function component(width, height, color, x, y) {
@@ -91,8 +97,10 @@ function component(width, height, color, x, y) {
 
     this.update = function () {
         ctx = myGameArea.context;
+        
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.drawImage(image, this.x, this.y, this.width, this.height)
     }
     this.newPos = function () {
         this.x += this.speedX;
@@ -141,7 +149,7 @@ function updateGameArea() {
 
     myCharacter.wallCrash()
 
-
+    
 
     myGameArea.clear();
 
@@ -164,11 +172,13 @@ function updateGameArea() {
         myCharacter.speedY += speed;
     } else if (myCharacter.speedY > 0) {
         myCharacter.speedY -= inertia;
+        
     }
 
     for (i = 0; i < bullets.length; i += 1) {
         bullets[i].y += -bulletSpeed;
         bullets[i].update();
+        bullet.hit(i, myEnemies);
         if (bullets[i].y < 0) bullets.splice(i, 1);
     }
     for (i = 0; i < myEnemies.length; i += 1) {

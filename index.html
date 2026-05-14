@@ -5,20 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Space Invader </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Delius&family=Rubik+Doodle+Shadow&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     </head>
   <body onload="startGame()" id="body" >
     <div   class="container-fluid">
         <div  class="row">
             <div class="col-12 text-center">
-            <h1 class="my-4">Space Invader Game</h1>
+            <h1 class="my-4">Doodle Invaders :]</h1>
             <p>Use arrow keys to move and spacebar to shoot!</p>
             </div>
-            <h1 id="speed">Speed: </h1>
+            
         </div>
         <div class="row">
             <div id="box" class="col-12 d-flex justify-content-center"  >
-             
+             <div style="display:none;">
+              <img id="ship" width="220" height="277" src="img/ship.png">
+              </div>
             </div>
         </div>
     </div>
