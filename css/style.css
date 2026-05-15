@@ -7,12 +7,14 @@
 html {
     height: 100%;
     background-color: rgb(127, 204, 255);
+    
 }
 
 body {
     height: 100%;
     background-color: rgb(127, 204, 255);
     font-family: 'Century Gothic', sans-serif;
+    position: relative;
 }
 
 .container-fluid {
@@ -47,4 +49,5 @@ canvas {
     background-color: aliceblue;
     border: 5px solid silver;
     margin: auto;
+    max-width: 100%;
 }

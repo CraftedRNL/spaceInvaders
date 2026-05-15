@@ -1,11 +1,16 @@
 var myCharacter;
 var myImage;
 var myEnemies = [];
+var eWidth = 50;
+var eHeight = 50;
+var stageOne = [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
+var position = 0;
 var bullets = [];
 var inertia = .15;
 var speed = .25;
 var bulletSpeed = 5;
 var bulletTrue = true;
+
 var image = document.getElementById("ship");
 function startGame() {
     myGameArea.start();
@@ -16,13 +21,18 @@ var myGameArea = {
 
         this.canvas.width = document.getElementById("box").clientWidth;
         this.canvas.height = document.getElementById("box").clientHeight;
-        // console.log(document.getElementById("box").clientWidth + " " + document.getElementById("box").clientHeight)
         this.canvas.style.borderColor = "black"
         this.canvas.classList.add("mx-auto")
         this.context = this.canvas.getContext("2d");
 
         myCharacter = new component(40, 40, "red", this.canvas.width, this.canvas.height);
-        myEnemies.push(new enemy(50, 50, "blue", this.canvas.width, this.canvas.height, 3, 1));
+        for (let i = 0; i < stageOne.length; i++) {
+            
+            myEnemies.push(new enemy(eWidth, eHeight, "blue", this.canvas.width/8 + position , 50, 3, 1));
+            position +=  (this.canvas.width/12 +eWidth);
+            console.log( this.canvas.width/12)
+        }
+
         document.getElementById("box").appendChild(this.canvas);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
@@ -52,6 +62,7 @@ function bullet(width, height, color, x, y) {
     this.width = width;
     this.height = height;
     this.x = x + width / 2 + width;
+    console.log(this.x)
     this.y = y - 30;
     this.update = function () {
         ctx = myGameArea.context;
@@ -70,6 +81,7 @@ function bullet(width, height, color, x, y) {
                 bulletBottom > enemy.y &&
                 bulletTop < enemy.y + enemy.height) {
                 enemyArray.splice(index, 1);
+                bullets.splice(i, 1)
                 return true;
             }
         });
@@ -104,10 +116,9 @@ function component(width, height, color, x, y) {
 
     this.update = function () {
         ctx = myGameArea.context;
-
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        // ctx.drawImage(image, this.x, this.y, this.width, this.height)
+        ctx.drawImage(image, (this.x), this.y, this.width, this.height)
     }
     this.newPos = function () {
         this.x += this.speedX;
@@ -159,37 +170,37 @@ function updateGameArea() {
     myCharacter.wallCrash()
 
 
-    if (!keys) {
-        return;
+    if (keys) {
+        if (keys[37]) {
+            myCharacter.speedX += -speed;
+        } else if (myCharacter.speedX < 0) {
+            myCharacter.speedX += inertia;
+        }
+        if (keys[39]) {
+            myCharacter.speedX += speed;
+        } else if (myCharacter.speedX > 0) {
+            myCharacter.speedX -= inertia;
+        }
+        if (keys[38]) {
+            myCharacter.speedY += -speed;
+        } else if (myCharacter.speedY < 0) {
+            myCharacter.speedY += inertia;
+        }
+        if (keys[40]) {
+            myCharacter.speedY += speed;
+        } else if (myCharacter.speedY > 0) {
+            myCharacter.speedY -= inertia;
+        }
+        if (keys[32] && bulletTrue) {
+            bullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y));
+            bulletTrue = false;
+            setTimeout(() => {
+                bulletTrue = true;
+            }, 300)
+        }
     }
 
-    if (keys[37]) {
-        myCharacter.speedX += -speed;
-    } else if (myCharacter.speedX < 0) {
-        myCharacter.speedX += inertia;
-    }
-    if (keys[39]) {
-        myCharacter.speedX += speed;
-    } else if (myCharacter.speedX > 0) {
-        myCharacter.speedX -= inertia;
-    }
-    if (keys[38]) {
-        myCharacter.speedY += -speed;
-    } else if (myCharacter.speedY < 0) {
-        myCharacter.speedY += inertia;
-    }
-    if (keys[40]) {
-        myCharacter.speedY += speed;
-    } else if (myCharacter.speedY > 0) {
-        myCharacter.speedY -= inertia;
-    }
-    if (keys[32] && bulletTrue) {
-        bullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y));
-        bulletTrue = false;
-        setTimeout(() => {
-            bulletTrue = true;
-        }, 300)
-    }
+
 
 
     for (i = 0; i < bullets.length; i += 1) {
