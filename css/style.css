@@ -49,5 +49,5 @@ canvas {
     background-color: aliceblue;
     border: 5px solid silver;
     margin: auto;
-    max-width: 100%;
+    /* max-width: 100%; */
 }
