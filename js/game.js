@@ -3,7 +3,8 @@ var myImage;
 var myEnemies = [];
 var eWidth = 50;
 var eHeight = 50;
-var stageOne = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
+var stageOne = ["."]
+// var stageOne = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var stageTwo = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var stageThree = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 
@@ -16,17 +17,16 @@ var bulletTrue = true;
 var eDirection = -1;
 var eInterval = 3000;
 var ebullet = 500;
-
+var shootingFrequency = 1000;
 var image = document.getElementById("ship");
-
 var score = 0;
 var currentLevel = 1;
 var maxLevel = 3;
-
 var levelTransition = false;
 var gameRunning = true;
 
 function startGame() {
+    myGameArea.stop();
     gameRunning = true;
     currentLevel = 1;
     score = 0;
@@ -36,6 +36,7 @@ function startGame() {
 var myGameArea = {
     canvas: document.createElement("canvas"),
     start: function () {
+        gameRunning = true;
         this.canvas.width = 1120;
         this.canvas.height = 700;
         this.canvas.style.borderColor = "black";
@@ -48,8 +49,7 @@ var myGameArea = {
         document.getElementById("box").appendChild(this.canvas);
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
-        this.enemyBulletInterval = setInterval(enemyBullet, 500);
-
+        this.enemyBulletInterval = setInterval(enemyBullet, shootingFrequency);
         window.addEventListener('keydown', function (e) {
             myGameArea.keys = (myGameArea.keys || []);
             myGameArea.keys[e.keyCode] = true;
@@ -79,7 +79,7 @@ function loadLevel(level) {
     if (level === 1) {
         stageData = stageOne;
         enemyColor = "blue";
-        enemyHealth = 2;
+        enemyHealth = 1;
         enemySpeed = 1;
         eDirection = -1;
         if (myCharacter) {
@@ -116,22 +116,18 @@ function loadLevel(level) {
 }
 
 function checkLevelComplete() {
-    var totalEnemies = 0;
-    for (var i = 0; i < myEnemies.length; i++) {
-        totalEnemies += myEnemies[i].length;
-    }
-
-    if (totalEnemies === 0 && myEnemies.length > 0) {
         if (currentLevel < maxLevel) {
             levelTransition = true;
             currentLevel++;
+            playerBullets = [];
+            enemyBullets = [];
+            shootingFrequency = (1000 * Math.pow(currentLevel, -1)).toFixed(2);
             showLevelTransition();
         } else if (currentLevel === maxLevel) {
             myGameArea.stop();
             alert("YOU WIN! Final Score: " + score + "\nPress OK to play again!");
             resetGame();
         }
-    }
 }
 
 function showLevelTransition() {
@@ -145,6 +141,7 @@ function resetGame() {
     enemyBullets = [];
     score = 0;
     currentLevel = 1;
+    shootingFrequency = 1000;
     bulletTrue = true;
     gameRunning = true;
     myGameArea.start();
@@ -153,7 +150,7 @@ function resetGame() {
 function bullet(width, height, color, x, y, who) {
     this.width = width;
     this.height = height;
-    this.x = x + width / 2;
+    this.x = x + width / 2 + width;
     this.y = y - 30;
     this.who = who;
 
@@ -180,8 +177,12 @@ function bullet(width, height, color, x, y, who) {
                     if (enemy.health === 1) {
                         enemyArray[row].splice(col, 1);
                         score += 10;
+                        
                         if (enemyArray[row].length === 0) {
                             enemyArray.splice(row, 1);
+                            if(enemyArray.length ===0){
+                                checkLevelComplete()
+                            }
                         }
                         return true;
                     } else {
@@ -217,6 +218,7 @@ function bullet(width, height, color, x, y, who) {
         }
         return false;
     };
+
 }
 
 function enemy(width, height, color, x, y, health, damage, moveSpeed) {
@@ -229,34 +231,15 @@ function enemy(width, height, color, x, y, health, damage, moveSpeed) {
     this.speedX = 0;
     this.speedY = 0;
     this.moveSpeed = moveSpeed;
-    this.patternCounter = 0;
 
     this.update = function () {
         ctx = myGameArea.context;
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     };
-
     this.newPos = function () {
-        if (currentLevel === 2) {
-            this.patternCounter++;
-            if (Math.floor(this.patternCounter / 60) % 2 === 0) {
-                this.x += 1 * eDirection * this.moveSpeed;
-            } else {
-                this.x += 0.5 * eDirection * this.moveSpeed;
-            }
-        } else if (currentLevel === 3) {
-            this.patternCounter++;
-            if (this.patternCounter % 120 < 60) {
-                this.x += 1 * eDirection * this.moveSpeed;
-            } else {
-                this.y += 0.5;
-            }
-        } else {
-            this.x += 1 * eDirection * this.moveSpeed;
-        }
+        this.x += 1 * eDirection * moveSpeed;
     };
-
     this.wallCrash = function () {
         const farthest = this.x + this.width;
         const closest = this.x;
@@ -288,12 +271,10 @@ function component(width, height, color, x, y, health) {
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.drawImage(image, this.x, this.y, this.width, this.height);
+        document.getElementById("score").innerHTML = score;
+        document.getElementById("health").innerHTML = this.health;
+        document.getElementById("level").innerHTML = currentLevel;
 
-        ctx.fillStyle = "red";
-        ctx.font = "20px Arial";
-        ctx.fillText("Score: " + score, 10, 30);
-        ctx.fillText("Health: " + this.health, 10, 60);
-        ctx.fillText("Level: " + currentLevel, 10, 90);
     };
 
     this.newPos = function () {
@@ -357,10 +338,10 @@ function updateGameArea() {
         }
         if (keys[32] && bulletTrue) {
             playerBullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y, "player"));
-            bulletTrue = false;
-            setTimeout(function () {
-                bulletTrue = true;
-            }, 300);
+            // bulletTrue = false;
+            // setTimeout(function () {
+            //     bulletTrue = true;
+            // }, 300);
         }
     }
 
@@ -370,9 +351,11 @@ function updateGameArea() {
         var hitResult = playerBullets[i].hit(myEnemies);
         if (hitResult) {
             playerBullets.splice(i, 1);
+            // bulletTrue = true;
             i--;
         } else if (playerBullets[i].y + playerBullets[i].height < 0) {
             playerBullets.splice(i, 1);
+            // bulletTrue = true;
             i--;
         }
     }
@@ -404,12 +387,12 @@ function updateGameArea() {
                 myEnemies[i][j].newPos();
             }
         }
+
     }
 
     myCharacter.newPos();
     myCharacter.update();
 
-    checkLevelComplete();
     myGameArea.frameNo++;
 }
 
@@ -425,15 +408,9 @@ function enemyBullet() {
     if (!gameRunning) return;
 
     if (myEnemies.length > 0) {
-        var shootingFrequency = 500;
-        if (currentLevel === 2) {
-            shootingFrequency = 400;
-        } else if (currentLevel === 3) {
-            shootingFrequency = 300;
-        }
-
-        clearInterval(myGameArea.enemyBulletInterval);
-        myGameArea.enemyBulletInterval = setInterval(enemyBullet, shootingFrequency);
+        console.log(shootingFrequency)
+        // clearInterval(myGameArea.enemyBulletInterval);
+        // myGameArea.enemyBulletInterval = setInterval(enemyBullet, shootingFrequency);
 
         var rng = Math.floor(Math.random() * myEnemies.length);
         if (myEnemies[rng] && myEnemies[rng].length > 0) {
