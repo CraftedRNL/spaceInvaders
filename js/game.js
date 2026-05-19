@@ -21,15 +21,22 @@ var eInterval = 3000;
 var ebullet = 500;
 var shootingFrequency = 1000;
 var image = document.getElementById("ship");
+var invader1 = document.getElementById("invader1");
+var invader2 = document.getElementById("invader2");
+var invader3 = document.getElementById("invader3");
 var score = 0;
 var currentLevel = 1;
 var maxLevel = 3;
 var levelTransition = false;
 var gameRunning = true;
+var highestScore=0;
+var totalKilled=0;
+window.onload = function() {
+    startMusic = new sound("../img/yoasobi.mp3");
+    startMusic.sound.volume = .3;
+    startMusic.play();
+};
 
-startMusic = new sound("../img/yoasobi.mp3");
-startMusic.sound.volume = .15;
-startMusic.play();
 function startGame() {
     startMusic.stop();
     myGameArea.stop();
@@ -123,8 +130,13 @@ function showLevelTransition() {
 }
 
 function resetGame() {
+    startMusic.stop();
+    enemyMusic.stop();
     playerBullets = [];
     enemyBullets = [];
+    if(score > highestScore){
+        highestScore = score;
+    }
     score = 0;
     currentLevel = 1;
     shootingFrequency = 1000;
@@ -166,11 +178,13 @@ function bullet(width, height, color, x, y, who) {
                     if (enemy.health === 1) {
                         enemyArray[row].splice(col, 1);
                         score += 10;
-                        
+                        totalKilled++;
                         if (enemyArray[row].length === 0) {
                             enemyArray.splice(row, 1);
                             if(enemyArray.length ===0){
-                                checkLevelComplete()
+                                setTimeout(()=>{
+                                    checkLevelComplete()
+                                },100)
                             }
                         }
                         return true;
@@ -195,8 +209,8 @@ function bullet(width, height, color, x, y, who) {
             bulletLeft < myCharacter.x + myCharacter.width &&
             bulletBottom > myCharacter.y &&
             bulletTop < myCharacter.y + myCharacter.height) {
-
-            if (myCharacter.health === 1) {
+                
+            if (myCharacter.health === 1  ) {
                 myGameArea.stop();
                 if (enemyMusic && enemyMusic.sound) {
                     enemyMusic.sound.currentTime = 0;
@@ -231,6 +245,7 @@ function enemy(width, height, color, x, y, health, damage, moveSpeed) {
         ctx = myGameArea.context;
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
+        
     };
     this.newPos = function () {
         this.x += 1 * eDirection * moveSpeed;
@@ -337,10 +352,10 @@ function updateGameArea() {
                 pew.sound.currentTime = 0;
                 pew.play();
             }
-            // bulletTrue = false;
-            // setTimeout(function () {
-            //     bulletTrue = true;
-            // }, 300);
+            bulletTrue = false;
+            setTimeout(function () {
+                bulletTrue = true;
+            }, 300);
         }
     }
 
@@ -370,22 +385,27 @@ function updateGameArea() {
             enemyBullets.splice(i, 1);
             i--;
         }
+        
     }
 
     if (myEnemies.length > 0) {
+        
         for (var i = 0; i < myEnemies.length; i++) {
+
             if (myEnemies[i].length > 0) {
                 myEnemies[i][myEnemies[i].length - 1].wallCrash();
                 myEnemies[i][0].wallCrash();
             }
-        }
-
-        for (var i = 0; i < myEnemies.length; i++) {
             for (var j = 0; j < myEnemies[i].length; j++) {
                 myEnemies[i][j].update();
                 myEnemies[i][j].newPos();
+                if(myEnemies[i][j].y >= myCharacter.y){
+                    console.log("works")
+                    resetGame()
+                }
             }
         }
+
 
     }
 
@@ -413,7 +433,7 @@ function sound(src) {
 function moveY() {
     for (var i = 0; i < myEnemies.length; i++) {
         for (var j = 0; j < myEnemies[i].length; j++) {
-            myEnemies[i][j].y += 10;
+            myEnemies[i][j].y += 100;
         }
     }
 }
