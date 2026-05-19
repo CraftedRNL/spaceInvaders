@@ -7,7 +7,9 @@ var stageOne = ["."]
 // var stageOne = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var stageTwo = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var stageThree = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
-
+var pew;
+var startMusic;
+var enemyMusic;
 var playerBullets = [];
 var enemyBullets = [];
 var inertia = .15;
@@ -25,11 +27,22 @@ var maxLevel = 3;
 var levelTransition = false;
 var gameRunning = true;
 
+startMusic = new sound("../img/yoasobi.mp3");
+startMusic.sound.volume = .15;
+startMusic.play();
 function startGame() {
+    startMusic.stop();
     myGameArea.stop();
     gameRunning = true;
     currentLevel = 1;
     score = 0;
+    pew = new sound("../img/pwe.mp3");
+    
+    enemyMusic = new sound("../img/chillLevelMusic.mp3");
+    var startScreen = document.getElementById("startScreen");
+    if (startScreen) {
+        startScreen.classList.add("hidden");
+    }
     myGameArea.start();
 }
 
@@ -37,6 +50,7 @@ var myGameArea = {
     canvas: document.createElement("canvas"),
     start: function () {
         gameRunning = true;
+        
         this.canvas.width = 1120;
         this.canvas.height = 700;
         this.canvas.style.borderColor = "black";
@@ -71,38 +85,16 @@ var myGameArea = {
 
 function loadLevel(level) {
     myEnemies = [];
-    var stageData;
-    var enemyColor = "blue";
-    var enemyHealth = 2;
-    var enemySpeed = 1;
+    var stagePatterns = [stageOne, stageTwo, stageThree];
+    var stageColors = ["blue", "orange", "purple"];
+    var stageData = stagePatterns[(level - 1) % stagePatterns.length];
+    var enemyColor = stageColors[(level - 1) % stageColors.length];
+    var enemyHealth = 1 + Math.floor((level - 1) / stagePatterns.length);
+    var enemySpeed = 1 + Math.floor((level - 1) / stagePatterns.length);
+    eDirection = -1;
 
-    if (level === 1) {
-        stageData = stageOne;
-        enemyColor = "blue";
-        enemyHealth = 1;
-        enemySpeed = 1;
-        eDirection = -1;
-        if (myCharacter) {
-            myCharacter.health = 3;
-        }
-    } else if (level === 2) {
-        stageData = stageTwo;
-        enemyColor = "orange";
-        enemyHealth = 2;
-        enemySpeed = 2;
-        eDirection = -1;
-        if (myCharacter) {
-            myCharacter.health = 3;
-        }
-    } else if (level === 3) {
-        stageData = stageThree;
-        enemyColor = "purple";
-        enemyHealth = 3;
-        enemySpeed = 2;
-        eDirection = -1;
-        if (myCharacter) {
-            myCharacter.health = 2;
-        }
+    if (myCharacter) {
+        myCharacter.health = Math.max(2, 4 - Math.floor((level - 1) / 3));
     }
 
     for (let i = 0; i < stageData.length; i++) {
@@ -116,18 +108,12 @@ function loadLevel(level) {
 }
 
 function checkLevelComplete() {
-        if (currentLevel < maxLevel) {
-            levelTransition = true;
-            currentLevel++;
-            playerBullets = [];
-            enemyBullets = [];
-            shootingFrequency = (1000 * Math.pow(currentLevel, -1)).toFixed(2);
-            showLevelTransition();
-        } else if (currentLevel === maxLevel) {
-            myGameArea.stop();
-            alert("YOU WIN! Final Score: " + score + "\nPress OK to play again!");
-            resetGame();
-        }
+        levelTransition = true;
+        currentLevel++;
+        playerBullets = [];
+        enemyBullets = [];
+        shootingFrequency = (1000 * Math.pow(currentLevel, -1)).toFixed(2);
+        showLevelTransition();
 }
 
 function showLevelTransition() {
@@ -144,7 +130,10 @@ function resetGame() {
     shootingFrequency = 1000;
     bulletTrue = true;
     gameRunning = true;
-    myGameArea.start();
+    document.getElementById("deathScreen").classList.remove("show");
+    setTimeout(() => {
+        myGameArea.start();
+    }, 300);
 }
 
 function bullet(width, height, color, x, y, who) {
@@ -209,8 +198,14 @@ function bullet(width, height, color, x, y, who) {
 
             if (myCharacter.health === 1) {
                 myGameArea.stop();
-                alert("GAME OVER! Score: " + score + "\nPress OK to play again!");
-                resetGame();
+                if (enemyMusic && enemyMusic.sound) {
+                    enemyMusic.sound.currentTime = 0;
+                    enemyMusic.play();
+                }
+                document.getElementById("finalScore").innerHTML = "Final Score: " + score;
+                setTimeout(() => {
+                    document.getElementById("deathScreen").classList.add("show");
+                }, 100);
             } else {
                 myCharacter.health--;
             }
@@ -320,7 +315,7 @@ function component(width, height, color, x, y, health) {
 
 function updateGameArea() {
     if (!gameRunning) return;
-
+    
     myGameArea.clear();
     var keys = myGameArea.keys;
     myCharacter.wallCrash();
@@ -338,6 +333,10 @@ function updateGameArea() {
         }
         if (keys[32] && bulletTrue) {
             playerBullets.push(new bullet(10, 25, "green", myCharacter.x, myCharacter.y, "player"));
+            if (pew && pew.sound) {
+                pew.sound.currentTime = 0;
+                pew.play();
+            }
             // bulletTrue = false;
             // setTimeout(function () {
             //     bulletTrue = true;
@@ -396,6 +395,21 @@ function updateGameArea() {
     myGameArea.frameNo++;
 }
 
+function sound(src) {
+  this.sound = document.createElement("audio");
+  this.sound.src = src;
+  this.sound.setAttribute("preload", "auto");
+  this.sound.setAttribute("controls", "none");
+  this.sound.style.display = "none";
+  document.body.appendChild(this.sound);
+  this.play = function(){
+    this.sound.play();
+  }
+  this.stop = function(){
+    this.sound.pause();
+  }
+}
+
 function moveY() {
     for (var i = 0; i < myEnemies.length; i++) {
         for (var j = 0; j < myEnemies[i].length; j++) {
@@ -435,3 +449,4 @@ function topWall() {
 function bottomWall() {
     myCharacter.y = myGameArea.canvas.height - myCharacter.height;
 }
+
