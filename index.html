@@ -15,23 +15,23 @@
 
 <body id="body">
 
-    <div id="startScreen" class="start-screen">
-      <div class="start-content">
-        
-        <div class="row">
-          <h1 class="mx-auto">Doodle Invaders :]</h1>
+  <div id="startScreen" class="start-screen">
+    <div class="start-content">
+
+      <div class="row">
+        <h1 class="mx-auto">Doodle Invaders :]</h1>
         <div class="col-4 ">
           <p class="game-menu" onclick="startGame()">Start Game</p>
-          <p class="game-menu">Options</p>
-          <p class="game-menu">Leaderboard</p>
-          <p class="game-menu">Statistics</p>
+          <p class="game-menu" onclick="options()">Options</p>
+          <p class="game-menu" onclick="showLeaderboard()">Leaderboard</p>
+          <p class="game-menu" onclick="stats()">Statistics</p>
         </div>
-        </div>
-        
-        
       </div>
+
+
     </div>
- 
+  </div>
+
 
   </div>
 
@@ -58,16 +58,29 @@
 
   <div id="deathScreen" class="death-screen">
     <div class="death-content">
-      <h1>RIP Ig</h1>
+      <!-- <h1>RIP Ig</h1> -->
       <p id="finalScore">Final Score: 0</p>
-      <button type="button" onclick="resetGame()" class="restart-btn">Play Again <i>perchance</i></button>
+      <button id="restart" type="button" onclick="resetGame()" class="restart-btn">Play Again <i>perchance</i></button>
+      <button id="menu" type="button" onclick="menu()" class="menu-btn">Go back to Menu</button>
     </div>
   </div>
+  
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:none; justify-content:center; align-items:center;">
+    <div style="background:#1a1a2e; padding:20px; border-radius:10px; min-width:300px;">
+        <h2 style="color:white;">Leaderboard</h2>
+        <div id="leaderboardList" style="color:white;">Loading...</div>
+        <button onclick="closeLeaderboard()" style="margin-top:10px; padding:5px 10px;">Close</button>
+    </div>
+</div>
 
-  <script src="js/game.js"></script>
+  <script type="module" src="./js/game.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
     crossorigin="anonymous"></script>
+  <script type="module">
+
+  </script>
 </body>
 
 </html>

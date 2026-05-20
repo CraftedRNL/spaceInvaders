@@ -1,10 +1,16 @@
+import { ConvexHttpClient } from 'convex/browser';
+
+const convex = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+window.convex = convex;
+
+var currentPlayerName = '';
+var pendingScore = 0;
 var myCharacter;
 var myImage;
 var myEnemies = [];
 var eWidth = 50;
 var eHeight = 50;
 var stageOne = ["."]
-// var stageOne = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var stageTwo = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var stageThree = [[".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."], [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]];
 var pew;
@@ -29,35 +35,158 @@ var currentLevel = 1;
 var maxLevel = 3;
 var levelTransition = false;
 var gameRunning = true;
-var highestScore=0;
-var totalKilled=0;
-window.onload = function() {
-    startMusic = new sound("../img/yoasobi.mp3");
-    startMusic.sound.volume = .3;
-    startMusic.play();
+var highestScore = 0;
+var totalKilled = 0;
+
+// ===== LEADERBOARD SYSTEM =====
+
+async function saveScoreToLeaderboard(playerName, playerScore) {
+    if (!playerName || playerName.trim() === "") {
+        console.log("Rejected: Empty name");
+        return false;
+    }
+    
+    if (!playerScore || playerScore <= 0) {
+        console.log("Rejected: Invalid score");
+        return false;
+    }
+    
+    try {
+        const result = await convex.mutation("leaderboard:submitScore", {
+            playerName: playerName.trim().substring(0, 15),
+            score: playerScore
+        });
+        console.log("✓ Score saved:", playerName, playerScore);
+        return true;
+    } catch (error) {
+        console.error("Save failed:", error);
+        return false;
+    }
+}
+
+window.showLeaderboard = async function() {
+    const modal = document.getElementById('leaderboardModal');
+    const listDiv = document.getElementById('leaderboardList');
+    
+    if (!modal) return;
+    
+    modal.style.display = 'flex';
+    listDiv.innerHTML = '<div style="text-align:center; padding:20px;">Loading scores...</div>';
+    
+    try {
+        const scores = await convex.query("leaderboard:getTopScores", {});
+        
+        if (!scores || scores.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; padding:20px;">🏆 No scores yet! Be the first to play! 🏆</div>';
+        } else {
+            listDiv.innerHTML = scores.map((entry, index) => {
+                let displayName = entry.playerName;
+                if (displayName.length > 15) {
+                    displayName = displayName.substring(0, 12) + '...';
+                }
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #333;">
+                        <span style="color:gold; font-weight:bold; width:45px;">#${index + 1}</span>
+                        <span style="flex:1; margin:0 10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px;" title="${escapeHtml(entry.playerName)}">${escapeHtml(displayName)}</span>
+                        <span style="color:#0f0; font-weight:bold; width:70px; text-align:right;">${entry.score}</span>
+                        <span style="color:#888; font-size:11px; width:90px; text-align:right;">${new Date(entry.submittedAt).toLocaleDateString()}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error("Leaderboard error:", error);
+        listDiv.innerHTML = '<div style="color:red; text-align:center; padding:20px;">⚠️ Error loading leaderboard</div>';
+    }
 };
 
-function startGame() {
+window.closeLeaderboard = function() {
+    const modal = document.getElementById('leaderboardModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(match) {
+        if (match === '&') return '&amp;';
+        if (match === '<') return '&lt;';
+        if (match === '>') return '&gt;';
+        return match;
+    });
+}
+
+window.openNameInput = function(callback) {
+    document.getElementById('nameModal').style.display = 'flex';
+    window.nameCallback = callback;
+};
+
+window.submitName = function() {
+    const name = document.getElementById('playerNameInput').value.trim();
+    console.log("Submit name:", name);
+
+    if (!name) {
+        alert('Enter your name');
+        return;
+    }
+    currentPlayerName = name;
+    localStorage.setItem('playerName', name);
+    document.getElementById('nameModal').style.display = 'none';
+
     startMusic.stop();
     myGameArea.stop();
     gameRunning = true;
     currentLevel = 1;
     score = 0;
     pew = new sound("../img/pwe.mp3");
-    
     enemyMusic = new sound("../img/chillLevelMusic.mp3");
     var startScreen = document.getElementById("startScreen");
     if (startScreen) {
         startScreen.classList.add("hidden");
     }
     myGameArea.start();
-}
+};
+
+window.closeNameModal = function() {
+    document.getElementById('nameModal').style.display = 'none';
+};
+
+window.onload = function() {
+    startMusic = new sound("../img/yoasobi.mp3");
+    startMusic.sound.volume = .3;
+    startMusic.play();
+};
+
+window.startGame = function() {
+    var name = prompt("Enter your name to play (max 15 chars):");
+
+    if (!name || name.trim() === "") {
+        alert("Name is required to play!");
+        return;
+    }
+
+    currentPlayerName = name.trim().substring(0, 15);
+
+    startMusic.stop();
+    myGameArea.stop();
+    gameRunning = true;
+    currentLevel = 1;
+    score = 0;
+    pew = new sound("../img/pwe.mp3");
+    enemyMusic = new sound("../img/chillLevelMusic.mp3");
+    var startScreen = document.getElementById("startScreen");
+    if (startScreen) {
+        startScreen.classList.add("hidden");
+    }
+    myGameArea.start();
+};
 
 var myGameArea = {
     canvas: document.createElement("canvas"),
-    start: function () {
+    start: function() {
         gameRunning = true;
-        
+
         this.canvas.width = 1120;
         this.canvas.height = 700;
         this.canvas.style.borderColor = "black";
@@ -71,26 +200,26 @@ var myGameArea = {
         this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
         this.enemyBulletInterval = setInterval(enemyBullet, shootingFrequency);
-        window.addEventListener('keydown', function (e) {
+        window.addEventListener('keydown', function(e) {
             myGameArea.keys = (myGameArea.keys || []);
             myGameArea.keys[e.keyCode] = true;
         });
 
-        window.addEventListener('keyup', function (e) {
+        window.addEventListener('keyup', function(e) {
             myGameArea.keys[e.keyCode] = false;
         });
     },
-    clear: function () {
+    clear: function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
-    stop: function () {
+    stop: function() {
         clearInterval(this.interval);
         clearInterval(this.enemyBulletInterval);
         gameRunning = false;
     }
 };
 
-function loadLevel(level) {
+window.loadLevel = function(level) {
     myEnemies = [];
     var stagePatterns = [stageOne, stageTwo, stageThree];
     var stageColors = ["blue", "orange", "purple"];
@@ -114,27 +243,28 @@ function loadLevel(level) {
     }
 }
 
-function checkLevelComplete() {
-        levelTransition = true;
-        currentLevel++;
-        playerBullets = [];
-        enemyBullets = [];
-        shootingFrequency = (1000 * Math.pow(currentLevel, -1)).toFixed(2);
-        showLevelTransition();
+window.checkLevelComplete = function() {
+    levelTransition = true;
+    currentLevel++;
+    playerBullets = [];
+    enemyBullets = [];
+    shootingFrequency = (1000 * Math.pow(currentLevel, -1)).toFixed(2);
+    showLevelTransition();
 }
 
-function showLevelTransition() {
+window.showLevelTransition = function() {
     myGameArea.stop();
     alert("Level " + currentLevel + "!\nGet ready!");
     myGameArea.start();
 }
 
-function resetGame() {
+window.resetGame = function() {
+    document.getElementById("restart").style.display = "none";
     startMusic.stop();
     enemyMusic.stop();
     playerBullets = [];
     enemyBullets = [];
-    if(score > highestScore){
+    if (score > highestScore) {
         highestScore = score;
     }
     score = 0;
@@ -148,20 +278,20 @@ function resetGame() {
     }, 300);
 }
 
-function bullet(width, height, color, x, y, who) {
+window.bullet = function(width, height, color, x, y, who) {
     this.width = width;
     this.height = height;
     this.x = x + width / 2 + width;
     this.y = y - 30;
     this.who = who;
 
-    this.update = function () {
-        ctx = myGameArea.context;
+    this.update = function() {
+        const ctx = myGameArea.context;
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     };
 
-    this.hit = function (enemyArray) {
+    this.hit = function(enemyArray) {
         const bulletTop = this.y;
         const bulletBottom = this.y + this.height;
         const bulletLeft = this.x;
@@ -181,10 +311,10 @@ function bullet(width, height, color, x, y, who) {
                         totalKilled++;
                         if (enemyArray[row].length === 0) {
                             enemyArray.splice(row, 1);
-                            if(enemyArray.length ===0){
-                                setTimeout(()=>{
+                            if (enemyArray.length === 0) {
+                                setTimeout(() => {
                                     checkLevelComplete()
-                                },100)
+                                }, 100)
                             }
                         }
                         return true;
@@ -199,7 +329,7 @@ function bullet(width, height, color, x, y, who) {
         return false;
     };
 
-    this.playerHit = function () {
+    this.playerHit = function() {
         const bulletTop = this.y;
         const bulletBottom = this.y + this.height;
         const bulletLeft = this.x;
@@ -209,14 +339,21 @@ function bullet(width, height, color, x, y, who) {
             bulletLeft < myCharacter.x + myCharacter.width &&
             bulletBottom > myCharacter.y &&
             bulletTop < myCharacter.y + myCharacter.height) {
-                
-            if (myCharacter.health === 1  ) {
+
+            if (myCharacter.health <= 1) {
                 myGameArea.stop();
                 if (enemyMusic && enemyMusic.sound) {
                     enemyMusic.sound.currentTime = 0;
                     enemyMusic.play();
                 }
+                document.getElementById("restart").style.display = "block";
                 document.getElementById("finalScore").innerHTML = "Final Score: " + score;
+                pendingScore = score;
+                
+                if (currentPlayerName && score > 0) {
+                    saveScoreToLeaderboard(currentPlayerName, score);
+                }
+                
                 setTimeout(() => {
                     document.getElementById("deathScreen").classList.add("show");
                 }, 100);
@@ -227,10 +364,9 @@ function bullet(width, height, color, x, y, who) {
         }
         return false;
     };
-
 }
 
-function enemy(width, height, color, x, y, health, damage, moveSpeed) {
+window.enemy = function(width, height, color, x, y, health, damage, moveSpeed) {
     this.width = width;
     this.height = height;
     this.x = x;
@@ -241,16 +377,17 @@ function enemy(width, height, color, x, y, health, damage, moveSpeed) {
     this.speedY = 0;
     this.moveSpeed = moveSpeed;
 
-    this.update = function () {
-        ctx = myGameArea.context;
+    this.update = function() {
+        const ctx = myGameArea.context;
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        
     };
-    this.newPos = function () {
+    
+    this.newPos = function() {
         this.x += 1 * eDirection * moveSpeed;
     };
-    this.wallCrash = function () {
+    
+    this.wallCrash = function() {
         const farthest = this.x + this.width;
         const closest = this.x;
         const wallleft = 0;
@@ -267,7 +404,7 @@ function enemy(width, height, color, x, y, health, damage, moveSpeed) {
     };
 }
 
-function component(width, height, color, x, y, health) {
+window.component = function(width, height, color, x, y, health) {
     this.width = width;
     this.height = height;
     this.x = (x / 2 - width / 1.5);
@@ -276,18 +413,17 @@ function component(width, height, color, x, y, health) {
     this.speedX = 0;
     this.speedY = 0;
 
-    this.update = function () {
-        ctx = myGameArea.context;
+    this.update = function() {
+        const ctx = myGameArea.context;
         ctx.fillStyle = color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.drawImage(image, this.x, this.y, this.width, this.height);
         document.getElementById("score").innerHTML = score;
         document.getElementById("health").innerHTML = this.health;
         document.getElementById("level").innerHTML = currentLevel;
-
     };
 
-    this.newPos = function () {
+    this.newPos = function() {
         this.x += this.speedX;
         this.y += this.speedY;
 
@@ -302,7 +438,7 @@ function component(width, height, color, x, y, health) {
         }
     };
 
-    this.wallCrash = function () {
+    this.wallCrash = function() {
         const myleft = this.x;
         const myright = this.x + this.width;
         const mytop = this.y;
@@ -328,9 +464,9 @@ function component(width, height, color, x, y, health) {
     };
 }
 
-function updateGameArea() {
+window.updateGameArea = function() {
     if (!gameRunning) return;
-    
+
     myGameArea.clear();
     var keys = myGameArea.keys;
     myCharacter.wallCrash();
@@ -353,7 +489,7 @@ function updateGameArea() {
                 pew.play();
             }
             bulletTrue = false;
-            setTimeout(function () {
+            setTimeout(function() {
                 bulletTrue = true;
             }, 300);
         }
@@ -365,11 +501,9 @@ function updateGameArea() {
         var hitResult = playerBullets[i].hit(myEnemies);
         if (hitResult) {
             playerBullets.splice(i, 1);
-            // bulletTrue = true;
             i--;
         } else if (playerBullets[i].y + playerBullets[i].height < 0) {
             playerBullets.splice(i, 1);
-            // bulletTrue = true;
             i--;
         }
     }
@@ -385,13 +519,10 @@ function updateGameArea() {
             enemyBullets.splice(i, 1);
             i--;
         }
-        
     }
 
     if (myEnemies.length > 0) {
-        
         for (var i = 0; i < myEnemies.length; i++) {
-
             if (myEnemies[i].length > 0) {
                 myEnemies[i][myEnemies[i].length - 1].wallCrash();
                 myEnemies[i][0].wallCrash();
@@ -399,53 +530,61 @@ function updateGameArea() {
             for (var j = 0; j < myEnemies[i].length; j++) {
                 myEnemies[i][j].update();
                 myEnemies[i][j].newPos();
-                if(myEnemies[i][j].y >= myCharacter.y){
-                    console.log("works")
-                    resetGame()
+                if (myEnemies[i][j].y >= myCharacter.y) {
+                    myGameArea.stop();
+                    if (enemyMusic && enemyMusic.sound) {
+                        enemyMusic.sound.currentTime = 0;
+                        enemyMusic.play();
+                    }
+                    document.getElementById("restart").style.display = "block";
+                    document.getElementById("finalScore").innerHTML = "Final Score: " + score;
+                    pendingScore = score;
+                    
+                    if (currentPlayerName && score > 0) {
+                        saveScoreToLeaderboard(currentPlayerName, score);
+                    }
+                    
+                    setTimeout(() => {
+                        document.getElementById("deathScreen").classList.add("show");
+                    }, 100);
                 }
             }
         }
-
-
     }
-
+    
     myCharacter.newPos();
     myCharacter.update();
-
     myGameArea.frameNo++;
 }
 
-function sound(src) {
-  this.sound = document.createElement("audio");
-  this.sound.src = src;
-  this.sound.setAttribute("preload", "auto");
-  this.sound.setAttribute("controls", "none");
-  this.sound.style.display = "none";
-  document.body.appendChild(this.sound);
-  this.play = function(){
-    this.sound.play();
-  }
-  this.stop = function(){
-    this.sound.pause();
-  }
+window.sound = function(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function() {
+        this.sound.play();
+    }
+    this.stop = function() {
+        this.sound.pause();
+    }
 }
 
-function moveY() {
+window.moveY = function() {
     for (var i = 0; i < myEnemies.length; i++) {
         for (var j = 0; j < myEnemies[i].length; j++) {
-            myEnemies[i][j].y += 100;
+            myEnemies[i][j].y += 10;
         }
     }
 }
 
-function enemyBullet() {
+window.enemyBullet = function() {
     if (!gameRunning) return;
 
     if (myEnemies.length > 0) {
         console.log(shootingFrequency)
-        // clearInterval(myGameArea.enemyBulletInterval);
-        // myGameArea.enemyBulletInterval = setInterval(enemyBullet, shootingFrequency);
-
         var rng = Math.floor(Math.random() * myEnemies.length);
         if (myEnemies[rng] && myEnemies[rng].length > 0) {
             var yRng = Math.floor(Math.random() * myEnemies[rng].length);
@@ -454,19 +593,37 @@ function enemyBullet() {
     }
 }
 
-function leftWall() {
+window.leftWall = function() {
     myCharacter.x = 0;
 }
 
-function rightWall() {
+window.rightWall = function() {
     myCharacter.x = myGameArea.canvas.width - myCharacter.width;
 }
 
-function topWall() {
+window.topWall = function() {
     myCharacter.y = 0;
 }
 
-function bottomWall() {
+window.bottomWall = function() {
     myCharacter.y = myGameArea.canvas.height - myCharacter.height;
 }
 
+window.die = function() {
+    myCharacter.health = 1;
+    console.log(myCharacter.health)
+}
+
+window.menu = function() {
+    document.getElementById("deathScreen").classList.remove("show");
+    document.getElementById("startScreen").classList.add("show");
+    document.getElementById("startScreen").classList.remove("hidden");
+}
+
+window.saveScoreAndRestart = function() {
+    if (currentPlayerName && pendingScore > 0) {
+        saveScoreToLeaderboard(currentPlayerName, pendingScore);
+    }
+    document.getElementById("deathScreen").classList.remove("show");
+    resetGame();
+};

@@ -51,12 +51,17 @@ canvas {
 }
 
 .death-screen {
+
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../img/ded.jpg");
+    background-position: top;
+    background-size: auto;
+    background-repeat: no-repeat;
+    background-color: rgb(0, 0, 0);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -68,7 +73,8 @@ canvas {
 
 .death-screen.show {
     opacity: 1;
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0);
+    
     pointer-events: auto;
 }
 
@@ -129,6 +135,7 @@ canvas {
 }
 
 .death-content {
+
     text-align: center;
     color: white;
     animation: slideUp 0.8s ease-in-out;
@@ -145,21 +152,27 @@ canvas {
     margin-bottom: 30px;
     color: #fff;
 }
-
+#finalScore {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: #fff;
+    margin-top: 50%;
+}
 .restart-btn {
     padding: 12px 40px;
     font-size: 1.2rem;
-    background-color: #44c4ff;
+    background-color: #272727;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin-bottom: 5%;
 }
 
 .restart-btn:hover {
-    background-color: #8f66ff;
-    border: 3px solid #ffffff;
+    background-color: #4e0b0b;
+    border: 1px solid #ffffff;
     transform: scale(1.05);
 }
 
@@ -167,7 +180,25 @@ canvas {
     transform: scale(0.95);
 }
 
-
+.menu-btn{
+   padding: 12px 40px;
+    font-size: 1.2rem;
+    background-color: #a8a8a8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.menu-btn:hover{
+   background-color: #fcf052;
+    border: 1px solid #4e0b4e;
+    color: black;
+    transform: scale(1.05);
+}
+.menu-btn:active{
+   transform: scale(0.95);
+}
 
 .game-menu{
     margin-top: 15%;
@@ -248,3 +279,221 @@ canvas {
   }
 }
 
+
+
+  /* Leaderboard styling */
+    .leaderboard-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      padding: 30px;
+      border-radius: 20px;
+      z-index: 1000;
+      min-width: 400px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+    
+    .leaderboard-modal h2 {
+      color: #00ff00;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .leaderboard-table {
+      width: 100%;
+      color: white;
+      border-collapse: collapse;
+    }
+    
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+    
+    .leaderboard-table th {
+      color: #00ff00;
+      font-weight: bold;
+    }
+    
+    .close-btn {
+      background: #ff0000;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+    
+    .close-btn:hover {
+      background: #cc0000;
+    }
+    
+    .player-name-input {
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid #00ff00;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      width: 100%;
+    }
+    
+    .save-score-btn {
+      background: #00ff00;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .stats-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+      color: white;
+    }
+    
+    .stat-card {
+      text-align: center;
+      padding: 15px;
+      background: rgba(0, 255, 0, 0.1);
+      border-radius: 10px;
+      border: 1px solid #00ff00;
+    }
+    
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #00ff00;
+    }
+
+    /* Leaderboard styling */
+.leaderboard-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #333;
+    font-family: monospace;
+}
+
+.leaderboard-rank {
+    color: gold;
+    font-weight: bold;
+    width: 50px;
+    flex-shrink: 0;
+}
+
+.leaderboard-name {
+    flex: 1;
+    margin: 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+}
+
+.leaderboard-score {
+    color: #0f0;
+    font-weight: bold;
+    width: 80px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.leaderboard-date {
+    color: #888;
+    font-size: 12px;
+    width: 100px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+/* Modal container */
+#leaderboardList {
+    max-width: 500px;
+    overflow-x: auto;
+}
+
+/* Leaderboard Modal Styles */
+#leaderboardModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+#leaderboardModal > div {
+    background: #1a1a2e;
+    padding: 20px;
+    border-radius: 10px;
+    min-width: 350px;
+    max-width: 550px;
+    width: 90%;
+}
+
+#leaderboardList {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.leaderboard-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    font-family: monospace;
+}
+
+.leaderboard-rank {
+    color: gold;
+    font-weight: bold;
+    width: 45px;
+    flex-shrink: 0;
+}
+
+.leaderboard-name {
+    flex: 1;
+    margin: 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+    text-align: left;
+}
+
+.leaderboard-score {
+    color: #0f0;
+    font-weight: bold;
+    width: 70px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.leaderboard-date {
+    color: #888;
+    font-size: 11px;
+    width: 90px;
+    flex-shrink: 0;
+    text-align: right;
+}
